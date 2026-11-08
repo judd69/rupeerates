@@ -97,7 +97,7 @@ public final class Formatter {
         StringBuilder out = new StringBuilder();
         out.append("{\n  \"base\": \"").append(latest.base()).append("\",\n");
         out.append("  \"date\": \"").append(latest.date()).append("\",\n");
-        out.append("  \"source\": \"ECB reference rates via api.frankfurter.app (mid-market)\",\n");
+        out.append("  \"source\": \"ECB reference rates via api.frankfurter.dev/v1 (mid-market)\",\n");
         out.append("  \"inr_per_unit\": {");
         List<Rates.PairRow> rows = Rates.majorPairs(latest);
         for (int i = 0; i < rows.size(); i++) {
@@ -118,7 +118,7 @@ public final class Formatter {
                 + "  \"rate\": " + c.rate() + ",\n"
                 + "  \"converted\": " + c.converted() + ",\n"
                 + "  \"date\": \"" + c.date() + "\",\n"
-                + "  \"source\": \"ECB reference rates via api.frankfurter.app (mid-market)\"\n"
+                + "  \"source\": \"ECB reference rates via api.frankfurter.dev/v1 (mid-market)\"\n"
                 + "}";
     }
 
@@ -147,7 +147,7 @@ public final class Formatter {
         out.append("  \"max\": ").append(stats.max()).append(",\n");
         out.append("  \"average\": ").append(stats.avg()).append(",\n");
         out.append("  \"change_pct\": ").append(stats.changePct()).append(",\n");
-        out.append("  \"source\": \"ECB reference rates via api.frankfurter.app (mid-market)\"\n");
+        out.append("  \"source\": \"ECB reference rates via api.frankfurter.dev/v1 (mid-market)\"\n");
         out.append("}");
         return out.toString();
     }

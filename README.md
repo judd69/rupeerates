@@ -111,7 +111,7 @@ $ java -jar build/rupeerates.jar --json --from-file examples/latest-usd.json
 {
   "base": "USD",
   "date": "2026-11-06",
-  "source": "ECB reference rates via api.frankfurter.app (mid-market)",
+  "source": "ECB reference rates via api.frankfurter.dev/v1 (mid-market)",
   "inr_per_unit": {
     "USD": 93.92,
     "EUR": 104.86121965924569,
@@ -132,7 +132,7 @@ $ java -jar build/rupeerates.jar --json --from-file examples/latest-usd.json con
   "rate": 93.92,
   "converted": 46960.0,
   "date": "2026-11-06",
-  "source": "ECB reference rates via api.frankfurter.app (mid-market)",
+  "source": "ECB reference rates via api.frankfurter.dev/v1 (mid-market)",
   "fee_pct": 1.5,
   "mid_market_value": 46960.0,
   "after_fee_value": 46255.6,
@@ -154,7 +154,7 @@ $ java -jar build/rupeerates.jar --json --from-file examples/usd-inr-30d.json tr
   "max": 96.73,
   "average": 95.02380952380955,
   "change_pct": -2.9049932802646565,
-  "source": "ECB reference rates via api.frankfurter.app (mid-market)"
+  "source": "ECB reference rates via api.frankfurter.dev/v1 (mid-market)"
 }
 ```
 
@@ -170,7 +170,7 @@ Errors are explicit, with the right exit code — no invented rates, ever:
 
 ```sh
 $ java -jar build/rupeerates.jar                       # live, in a sandbox that blocks JVM HTTPS
-error: Could not reach api.frankfurter.app (Unrecognized SSL message, plaintext connection?). Check your connection, or replay a saved snapshot with --from-file. RupeeRates never shows invented rates.
+error: Could not reach api.frankfurter.dev (Unrecognized SSL message, plaintext connection?). Check your connection, or replay a saved snapshot with --from-file. RupeeRates never shows invented rates.
 # exit 1
 
 $ java -jar build/rupeerates.jar --from-file examples/latest-usd.json convert 10 AED INR

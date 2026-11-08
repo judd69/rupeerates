@@ -12,9 +12,11 @@ import java.time.LocalDate;
 import java.util.StringJoiner;
 
 /**
- * Client for the Frankfurter API (https://api.frankfurter.app) — free,
- * keyless, ECB reference rates. Frankfurter answers plain HTTP with a 301
- * to HTTPS, so the client MUST follow redirects (HttpClient.Redirect.NORMAL).
+ * Client for the Frankfurter API (https://api.frankfurter.dev/v1) — free,
+ * keyless, ECB reference rates. The old host api.frankfurter.app now
+ * 301-redirects to api.frankfurter.dev/v1, and that cross-origin redirect
+ * breaks fetch() in some browsers (notably Safari) — so the client calls
+ * the new host directly instead of relying on the redirect.
  *
  * <p>RupeeRates never invents rates: if the network fails and no
  * {@code --from-file} snapshot was given, the caller gets a
@@ -22,7 +24,7 @@ import java.util.StringJoiner;
  */
 public final class FrankfurterClient {
 
-    public static final String BASE_URL = "https://api.frankfurter.app";
+    public static final String BASE_URL = "https://api.frankfurter.dev/v1";
 
     private final HttpClient http;
 
@@ -118,7 +120,7 @@ public final class FrankfurterClient {
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DataException(
-                    "Could not reach api.frankfurter.app (" + e.getMessage() + "). "
+                    "Could not reach api.frankfurter.dev (" + e.getMessage() + "). "
                             + "Check your connection, or replay a saved snapshot with --from-file. "
                             + "RupeeRates never shows invented rates.", e);
         }
