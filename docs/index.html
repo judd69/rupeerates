@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RupeeRates — what your money is actually worth in rupees</title>
+<meta name="description" content="Live INR exchange rates from ECB reference data via Frankfurter, a converter, a 30-day trend chart, and the remittance math: what you actually receive after fees and spread.">
+<style>
+  :root{
+    --paper:#FAFAF7; --ink:#111111; --card:#FFFFFF; --muted:#5B5B58;
+    --accent:#059669; --line:#E8E8E3; --up:#059669; --down:#DC2626;
+    --spring:cubic-bezier(.34,1.4,.44,1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--accent)}
+  .wrap{max-width:1020px;margin:0 auto;padding:0 20px 64px}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0 8px}
+  .logo{font-weight:800;font-size:20px;letter-spacing:-.02em}
+  .logo b{color:var(--accent)}
+  .nav-note{color:var(--muted);font-size:13px}
+  .nav-note a{color:var(--muted)}
+  header{padding:28px 0 8px}
+  h1{font-size:clamp(44px,7vw,84px);line-height:.98;letter-spacing:-.035em;margin:0 0 14px;font-weight:800}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:18px;line-height:1.55;color:var(--muted);max-width:640px;margin:0}
+  .lede strong{color:var(--ink)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;margin-top:28px}
+  .card h2{margin:0 0 4px;font-size:22px;letter-spacing:-.02em}
+  .card .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .conv-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end}
+  .field label{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .field input,.field select{width:100%;padding:14px 16px;font-size:18px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font-family:inherit}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+  .swap{border:1.5px solid var(--line);background:#fff;border-radius:50%;width:44px;height:44px;font-size:20px;cursor:pointer;margin-bottom:2px;transition:transform .35s var(--spring)}
+  .swap:hover{transform:rotate(180deg)}
+  .result{margin-top:20px;padding:20px;border-radius:14px;background:var(--paper);display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline}
+  .result .big{font-size:clamp(30px,5vw,44px);font-weight:800;letter-spacing:-.03em;color:var(--accent);transition:transform .3s var(--spring)}
+  .result .big.morph{transform:scale(1.04)}
+  .result .meta{color:var(--muted);font-size:14px;line-height:1.5}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s var(--spring)}
+  .chip:hover{border-color:var(--ink)}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;transform:scale(1.05)}
+  .chip .save{opacity:.6;font-weight:400}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{padding:12px 8px;text-align:left;border-bottom:1px solid var(--line)}
+  th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.pair-row{cursor:pointer}
+  tr.pair-row:hover td{background:#F4F4EF}
+  tr.pair-row.active td{background:#ECFDF5}
+  .chg-up{color:var(--up);font-weight:600}
+  .chg-down{color:var(--down);font-weight:600}
+  .chg-flat{color:var(--muted)}
+  #chart{width:100%;height:auto;display:block}
+  .chart-line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .chart-area{fill:var(--accent);opacity:.08}
+  .chart-grid{stroke:var(--line);stroke-width:1}
+  .chart-label{font-size:11px;fill:var(--muted)}
+  .chart-stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:14px;font-size:14px}
+  .chart-stats b{font-variant-numeric:tabular-nums}
+  .fee-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .fee-grid input[type=range]{width:100%;accent-color:var(--accent)}
+  .fee-out{display:grid;gap:10px}
+  .fee-row{display:flex;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px}
+  .fee-row b{font-variant-numeric:tabular-nums}
+  .fee-row.receive{background:#ECFDF5;border-color:#A7F3D0}
+  .fee-row.hidden b{color:var(--down)}
+  .spread{border-left:4px solid var(--accent);background:#fff;padding:18px 20px;border-radius:0 14px 14px 0;margin-top:28px;font-size:15px;line-height:1.6}
+  .spread b{font-variant-numeric:tabular-nums}
+  .spread .src{color:var(--muted);font-size:13px}
+  .status{padding:14px 16px;border-radius:12px;font-size:14px;line-height:1.5;margin-top:28px;display:none}
+  .status.error{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
+  .status.loading{display:block;background:#fff;border:1px solid var(--line);color:var(--muted)}
+  footer{margin-top:44px;color:var(--muted);font-size:13px;line-height:1.7}
+  footer a{color:var(--muted)}
+  .refresh{font-size:13px;color:var(--muted)}
+  @media (max-width:640px){
+    .conv-grid{grid-template-columns:1fr}
+    .swap{transform:rotate(90deg);justify-self:center}
+    .fee-grid{grid-template-columns:1fr}
+    .nav-note{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo">Rupee<b>Rates</b></div>
+    <div class="nav-note">ECB reference rates via <a href="https://www.frankfurter.app/">Frankfurter</a> &middot; <a href="https://github.com/judd69/rupeerates">GitHub</a></div>
+  </nav>
+
+  <header>
+    <h1>What is your money <em>actually</em> worth in rupees?</h1>
+    <p class="lede">Live ECB reference rates with the rupee as home base — a converter, a 30-day trend, and the
+    remittance math nobody shows you: the rate Google quotes is <strong>never</strong> the rate your bank pays.
+    RupeeRates shows both, and the gap between them.</p>
+  </header>
+
+  <div id="status" class="status loading" role="status">Fetching live ECB reference rates…</div>
+
+  <section class="card" aria-label="Currency converter">
+    <h2>Converter</h2>
+    <p class="sub">ECB reference (mid-market) rate. <span id="rate-date">—</span></p>
+    <div class="conv-grid">
+      <div class="field"><label for="amount">Amount</label><input id="amount" type="number" min="0" step="any" value="500"></div>
+      <button class="swap" id="swap" title="Swap currencies" aria-label="Swap currencies">⇄</button>
+      <div class="field"><label for="from">From</label><select id="from"></select></div>
+      <div class="field"><label for="to">To</label><select id="to"></select></div>
+    </div>
+    <div class="result">
+      <div class="big" id="converted">—</div>
+      <div class="meta" id="rate-line">Enter an amount to convert.</div>
+    </div>
+    <div class="chips" id="saved-chips" aria-label="Saved pairs"></div>
+  </section>
+
+  <section class="card" aria-label="Major pairs in rupees">
+    <h2>One unit buys, in rupees</h2>
+    <p class="sub">INR-based majors, ECB reference date <span id="table-date">—</span>. Click a row to chart it. <span class="refresh" id="refresh-note"></span></p>
+    <table>
+      <thead><tr><th>Currency</th><th class="num">1 unit = ₹</th><th class="num">vs yesterday</th></tr></thead>
+      <tbody id="pair-body"><tr><td colspan="3">Loading…</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="card" aria-label="30-day trend">
+    <h2>30-day trend: <span id="chart-pair">USD → INR</span></h2>
+    <p class="sub">Daily ECB reference rates, last 30 days (trading days only — the ECB publishes no weekend rates).</p>
+    <svg id="chart" viewBox="0 0 720 260" role="img" aria-label="30-day exchange rate chart"></svg>
+    <div class="chart-stats" id="chart-stats"></div>
+  </section>
+
+  <section class="card" aria-label="What you actually receive">
+    <h2>What you actually receive</h2>
+    <p class="sub">Banks and remittance services take their cut as a fee or a worse rate. Move the slider to see the hidden cost.</p>
+    <div class="fee-grid">
+      <div class="field">
+        <label for="fee-amount">You send (<span id="fee-from-label">USD</span>)</label>
+        <input id="fee-amount" type="number" min="0" step="any" value="500">
+        <label for="fee-slider" style="margin-top:18px">Fee / spread: <span id="fee-pct-label">1.5%</span></label>
+        <input id="fee-slider" type="range" min="0" max="10" step="0.1" value="1.5">
+      </div>
+      <div class="fee-out">
+        <div class="fee-row"><span>Mid-market value</span><b id="fee-mid">—</b></div>
+        <div class="fee-row receive"><span>You actually receive</span><b id="fee-after">—</b></div>
+        <div class="fee-row hidden"><span>Hidden cost</span><b id="fee-hidden">—</b></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="spread">
+    <strong>The spread, in plain numbers.</strong> On 7 Nov 2026 the mid-market rate was <b>₹94.14</b> per dollar —
+    but Indian banks' TT buying rates trailed it: Central Bank of India <b>₹93.50</b>, City Union Bank <b>₹93.55</b>,
+    DBS <b>₹92.28</b>. That gap of ₹0.80–₹3.77 per dollar is the spread: on $500 it quietly costs you ₹400–₹1,885.
+    The rate on this page is the ECB reference (mid-market) rate — the honest benchmark, not your bank's rate.
+    <div class="src">Bank TT rates as reported 7 Nov 2026; mid-market ₹94.14. AED is not published by the ECB, so it is not listed here.</div>
+  </aside>
+
+  <footer>
+    RupeeRates — live INR exchange rates. Data: ECB reference rates via the
+    <a href="https://www.frankfurter.app/">Frankfurter API</a> (free, no key) — mid-market rates, not bank TT rates.
+    Rates are fetched live in your browser; if the API is unreachable this page says so and shows nothing invented.
+    Source: <a href="https://github.com/judd69/rupeerates">github.com/judd69/rupeerates</a> ·
+    CLI: <code>rupeerates convert 500 USD INR --fee 1.5</code>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const API = "https://api.frankfurter.app";
+const MAJORS = ["USD","EUR","GBP","AUD","CAD","SGD","JPY","CHF","CNY","NZD","SEK","NOK"];
+const NAMES = {USD:"US dollar",EUR:"Euro",GBP:"British pound",AUD:"Australian dollar",CAD:"Canadian dollar",SGD:"Singapore dollar",JPY:"Japanese yen",CHF:"Swiss franc",CNY:"Chinese yuan",NZD:"New Zealand dollar",SEK:"Swedish krona",NOK:"Norwegian krone",INR:"Indian rupee",BGN:"Bulgarian lev",BRL:"Brazilian real",CZK:"Czech koruna",DKK:"Danish krone",HKD:"Hong Kong dollar",HUF:"Hungarian forint",IDR:"Indonesian rupiah",ILS:"Israeli shekel",ISK:"Icelandic krona",KRW:"South Korean won",MXN:"Mexican peso",MYR:"Malaysian ringgit",PHP:"Philippine peso",PLN:"Polish zloty",RON:"Romanian leu",THB:"Thai baht",TRY:"Turkish lira",ZAR:"South African rand"};
+const CODES = ["INR",...MAJORS,"BGN","BRL","CZK","DKK","HKD","HUF","IDR","ILS","ISK","KRW","MXN","MYR","PHP","PLN","RON","THB","TRY","ZAR"];
+// AED is deliberately absent: the ECB does not publish it, so Frankfurter has no AED rate.
+
+const $ = id => document.getElementById(id);
+const fmtMoney = n => n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtRate = n => n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:4});
+const fmtPct = (n,signed) => (signed && n>0 ? "+" : "") + n.toFixed(2) + "%";
+
+let latest = null;        // {base, date, rates} from /latest?from=INR
+let prevDay = null;       // previous trading day's INR-based rates, for day-change
+let seriesCache = {};     // "USD-INR" -> {dates:[], values:[]}
+let state = {from:"USD", to:"INR"};
+let savedPairs = JSON.parse(localStorage.getItem("rupeerates:saved") || "[[\"USD\",\"INR\"],[\"EUR\",\"INR\"],[\"GBP\",\"INR\"]]");
+
+function params(){
+  const q = new URLSearchParams(location.search);
+  return {from:(q.get("from")||"").toUpperCase(), to:(q.get("to")||"").toUpperCase()};
+}
+function syncUrl(){
+  const u = new URL(location.href);
+  u.searchParams.set("from", state.from); u.searchParams.set("to", state.to);
+  history.replaceState(null, "", u);
+}
+function savePairs(){
+  localStorage.setItem("rupeerates:saved", JSON.stringify(savedPairs));
+}
+
+function buildSelects(){
+  for (const id of ["from","to"]) {
+    const sel = $(id);
+    for (const code of CODES) {
+      const opt = document.createElement("option");
+      opt.value = code; opt.textContent = code + " — " + (NAMES[code] || code);
+      sel.appendChild(opt);
+    }
+  }
+  const p = params();
+  if (CODES.includes(p.from)) state.from = p.from;
+  if (CODES.includes(p.to)) state.to = p.to;
+  $("from").value = state.from; $("to").value = state.to;
+}
+
+async function fetchJson(url){
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("Frankfurter returned HTTP " + r.status);
+  return r.json();
+}
+
+function inrPerUnit(code){
+  // latest is base INR: rates[code] = units of code per 1 INR, so invert.
+  if (code === "INR") return 1;
+  return 1 / latest.rates[code];
+}
+
+async function load(){
+  const status = $("status");
+  try {
+    const [lat, hist] = await Promise.all([
+      fetchJson(API + "/latest?from=INR&to=" + CODES.filter(c => c !== "INR").join(",")),
+      fetchJson(API + "/" + isoDaysAgo(8) + ".." + isoDaysAgo(0) + "?from=INR&to=" + MAJORS.join(","))
+    ]);
+    latest = lat;
+    // Previous trading day = the second-to-last date in the series.
+    const dates = Object.keys(hist.rates).sort();
+    if (dates.length >= 2) {
+      const prev = hist.rates[dates[dates.length - 2]];
+      prevDay = {};
+      for (const c of MAJORS) prevDay[c] = 1 / prev[c];
+    }
+    status.className = "status"; status.style.display = "none";
+    renderAll();
+    await loadChart();
+    $("refresh-note").textContent = "Updated " + new Date().toLocaleTimeString("en-IN") + " · auto-refreshes every 30 min.";
+  } catch (e) {
+    status.className = "status error";
+    status.textContent = "Could not reach the Frankfurter API (" + e.message + "). No rates are shown — RupeeRates never shows invented rates. Check your connection and refresh.";
+    $("pair-body").innerHTML = "<tr><td colspan='3'>Rates unavailable — the API could not be reached.</td></tr>";
+  }
+}
+
+function isoDaysAgo(n){
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0,10);
+}
+
+// Cross rate from→to using the INR-based latest snapshot:
+// 1 from = X INR, 1 to = Y INR, so 1 from = X/Y to.
+function rate(from, to){
+  if (from === to) return 1;
+  return inrPerUnit(from) / inrPerUnit(to);
+}
+
+function renderAll(){
+  $("rate-date").textContent = "ECB reference, " + latest.date;
+  $("table-date").textContent = latest.date;
+  renderTable();
+  renderConverter();
+  renderChips();
+  renderFee();
+}
+
+function renderTable(){
+  const body = $("pair-body");
+  body.innerHTML = "";
+  for (const code of MAJORS) {
+    const v = inrPerUnit(code);
+    const tr = document.createElement("tr");
+    tr.className = "pair-row" + (state.from === code && state.to === "INR" ? " active" : "");
+    tr.title = "Chart " + code + " → INR";
+    const name = document.createElement("td");
+    name.innerHTML = "<b>" + code + "</b> <span style='color:var(--muted)'>" + (NAMES[code] || "") + "</span>";
+    const val = document.createElement("td");
+    val.className = "num"; val.textContent = "₹" + fmtMoney(v);
+    const chg = document.createElement("td");
+    chg.className = "num";
+    if (prevDay && prevDay[code]) {
+      const d = (v - prevDay[code]) / prevDay[code] * 100;
+      chg.textContent = fmtPct(d, true);
+      chg.classList.add(d > 0.005 ? "chg-up" : d < -0.005 ? "chg-down" : "chg-flat");
+    } else {
+      chg.textContent = "—"; chg.classList.add("chg-flat");
+    }
+    tr.append(name, val, chg);
+    tr.addEventListener("click", () => { state.from = code; state.to = "INR"; $("from").value = code; $("to").value = "INR"; syncUrl(); renderAll(); loadChart(); });
+    body.appendChild(tr);
+  }
+}
+
+function morphNumber(el, text){
+  // The converted amount morphs in place with a short spring (tiny overshoot) instead of jumping.
+  el.classList.remove("morph"); void el.offsetWidth;
+  el.textContent = text;
+  el.classList.add("morph");
+  setTimeout(() => el.classList.remove("morph"), 320);
+}
+
+function renderConverter(){
+  const amount = parseFloat($("amount").value);
+  const out = $("converted"), line = $("rate-line");
+  if (!latest || isNaN(amount) || amount < 0) { out.textContent = "—"; line.textContent = "Enter a valid amount to convert."; return; }
+  const r = rate(state.from, state.to);
+  if (!isFinite(r)) { out.textContent = "—"; line.textContent = "No ECB rate for " + state.from + " → " + state.to + " in today's release."; return; }
+  const converted = amount * r;
+  const sym = state.to === "INR" ? "₹" : "";
+  morphNumber(out, sym + fmtMoney(converted) + (state.to === "INR" ? "" : " " + state.to));
+  line.textContent = fmtMoney(amount) + " " + state.from + " × 1 " + state.from + " = " + fmtRate(r) + " " + state.to
+    + "  ·  ECB reference, " + latest.date + " (mid-market — not your bank's rate)";
+  $("fee-from-label").textContent = state.from;
+  renderFee();
+}
+
+function renderChips(){
+  const box = $("saved-chips");
+  box.innerHTML = "";
+  for (const [f,t] of savedPairs) {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (state.from === f && state.to === t ? " active" : "");
+    chip.textContent = f + " → " + t;
+    chip.addEventListener("click", () => { state.from = f; state.to = t; $("from").value = f; $("to").value = t; syncUrl(); renderAll(); loadChart(); });
+    box.appendChild(chip);
+  }
+  const cur = state.from + "→" + state.to;
+  const isSaved = savedPairs.some(([f,t]) => f === state.from && t === state.to);
+  if (!isSaved) {
+    const add = document.createElement("button");
+    add.className = "chip";
+    add.innerHTML = "+ Save <span class='save'>" + cur.replace("→"," → ") + "</span>";
+    add.addEventListener("click", () => {
+      savedPairs.push([state.from, state.to]); savePairs(); renderChips();
+    });
+    box.appendChild(add);
+  }
+}
+
+async function loadChart(){
+  const key = state.from + "-" + state.to;
+  $("chart-pair").textContent = state.from + " → " + state.to;
+  try {
+    if (!seriesCache[key]) {
+      const data = await fetchJson(API + "/" + isoDaysAgo(30) + ".." + isoDaysAgo(0)
+        + "?from=" + state.from + "&to=" + state.to);
+      const dates = Object.keys(data.rates).sort();
+      seriesCache[key] = {dates, values: dates.map(d => data.rates[d][state.to])};
+    }
+    drawChart(seriesCache[key]);
+  } catch (e) {
+    $("chart-stats").innerHTML = "<span style='color:#991B1B'>Trend unavailable — the API could not be reached (" + e.message + ").</span>";
+  }
+}
+
+function drawChart(s){
+  const svg = $("chart"), W = 720, H = 260, P = {l:56, r:16, t:14, b:28};
+  const vals = s.values;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) || 1;
+  const x = i => P.l + (W - P.l - P.r) * (vals.length === 1 ? 0.5 : i / (vals.length - 1));
+  const y = v => P.t + (H - P.t - P.b) * (1 - (v - min) / span);
+  let d = "";
+  vals.forEach((v,i) => { d += (i === 0 ? "M" : "L") + x(i).toFixed(1) + " " + y(v).toFixed(1) + " "; });
+  const area = d + "L" + x(vals.length-1).toFixed(1) + " " + (H - P.b) + " L" + x(0).toFixed(1) + " " + (H - P.b) + " Z";
+  const first = s.dates[0], last = s.dates[s.dates.length - 1];
+  svg.innerHTML =
+    "<line class='chart-grid' x1='" + P.l + "' y1='" + P.t + "' x2='" + P.l + "' y2='" + (H - P.b) + "'/>"
+    + "<line class='chart-grid' x1='" + P.l + "' y1='" + (H - P.b) + "' x2='" + (W - P.r) + "' y2='" + (H - P.b) + "'/>"
+    + "<text class='chart-label' x='8' y='" + (P.t + 4) + "'>" + fmtRate(max) + "</text>"
+    + "<text class='chart-label' x='8' y='" + (H - P.b) + "'>" + fmtRate(min) + "</text>"
+    + "<text class='chart-label' x='" + P.l + "' y='" + (H - 8) + "'>" + first + "</text>"
+    + "<text class='chart-label' x='" + (W - P.r - 78) + "' y='" + (H - 8) + "'>" + last + "</text>"
+    + "<path class='chart-area' d='" + area + "'/>"
+    + "<path class='chart-line' id='chart-path' d='" + d + "'/>";
+  // The line draws itself on load and morphs when the pair changes.
+  const path = svg.querySelector("#chart-path");
+  const len = path.getTotalLength();
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+  path.getBoundingClientRect();
+  path.style.transition = "stroke-dashoffset 1.1s ease-out, d .6s ease";
+  path.style.strokeDashoffset = "0";
+  const avg = vals.reduce((a,b) => a + b, 0) / vals.length;
+  const chg = (vals[vals.length-1] - vals[0]) / vals[0] * 100;
+  $("chart-stats").innerHTML =
+    "<span>Start <b>" + fmtRate(vals[0]) + "</b> (" + first + ")</span>"
+    + "<span>End <b>" + fmtRate(vals[vals.length-1]) + "</b> (" + last + ")</span>"
+    + "<span>Min <b>" + fmtRate(min) + "</b></span>"
+    + "<span>Max <b>" + fmtRate(max) + "</b></span>"
+    + "<span>Average <b>" + fmtRate(avg) + "</b></span>"
+    + "<span>Change <b class='" + (chg >= 0 ? "chg-up" : "chg-down") + "'>" + fmtPct(chg, true) + "</b></span>"
+    + "<span>" + vals.length + " trading days</span>";
+}
+
+function renderFee(){
+  if (!latest) return;
+  const amount = parseFloat($("fee-amount").value);
+  const pct = parseFloat($("fee-slider").value);
+  $("fee-pct-label").textContent = pct.toFixed(1) + "%";
+  if (isNaN(amount) || amount < 0) { $("fee-mid").textContent = "—"; $("fee-after").textContent = "—"; $("fee-hidden").textContent = "—"; return; }
+  const r = rate(state.from, "INR");
+  const mid = amount * r;
+  const hidden = mid * pct / 100;
+  $("fee-mid").textContent = "₹" + fmtMoney(mid);
+  $("fee-after").textContent = "₹" + fmtMoney(mid - hidden);
+  $("fee-hidden").textContent = "₹" + fmtMoney(hidden);
+  if (state.from !== "USD") $("fee-from-label").textContent = state.from;
+}
+
+$("amount").addEventListener("input", renderConverter);
+$("from").addEventListener("change", () => { state.from = $("from").value; syncUrl(); renderAll(); loadChart(); });
+$("to").addEventListener("change", () => { state.to = $("to").value; syncUrl(); renderAll(); loadChart(); });
+$("swap").addEventListener("click", () => {
+  [state.from, state.to] = [state.to, state.from];
+  $("from").value = state.from; $("to").value = state.to;
+  syncUrl(); renderAll(); loadChart();
+});
+$("fee-amount").addEventListener("input", renderFee);
+$("fee-slider").addEventListener("input", renderFee);
+
+buildSelects();
+load();
+setInterval(() => { seriesCache = {}; load(); }, 30 * 60 * 1000);
+</script>
+</body>
+</html>
